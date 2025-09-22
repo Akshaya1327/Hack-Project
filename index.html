@@ -1,1 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Personal Finance App</title>
+<style>
+  :root{
+    --bg:#0f1724; --card:#0b1220; --muted:#94a3b8;
+    --accent:#7c3aed; --accent-2:#06b6d4; --glass: rgba(255,255,255,0.05);
+    --radius:14px; --gap:16px; font-family: Inter, system-ui;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:linear-gradient(180deg,#071021 0%, #071826 100%); color:#e6eef8; min-height:100vh; display:flex; justify-content:center; align-items:center;}
+  h1,h2,h3{margin:0}
+  .card{background:var(--card); padding:20px; border-radius:var(--radius); box-shadow:0 6px 24px rgba(0,0,0,.4);}
+  input,select,button{padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); background:var(--glass); color:#fff;}
+  button{cursor:pointer; font-weight:600; background:var(--accent); border:none;}
+  .hidden{display:none !important}
+  .center{text-align:center}
+  /* Layout */
+  .app{display:flex; flex-direction:column; width:100%; max-width:1100px; margin:auto; padding:20px}
+  header{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px}
+  nav button{background:transparent; border:none; color:var(--muted); margin-left:12px;}
+  nav button.active{color:#fff; border-bottom:2px solid var(--accent)}
+  .grid{display:grid; gap:20px}
+  .dashboard{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .summary-card{padding:16px; border-radius:var(--radius); background:var(--glass);}
+  .summary-card h2{font-size:1.2rem; margin-bottom:6px}
+</style>
+</head>
+<body>
 
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="card" style="width:340px">
+  <h2 class="center">Login</h2>
+  <p class="center" style="color:var(--muted);margin:10px 0 20px">Demo login (local only)</p>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <input id="username" type="text" placeholder="Username"/>
+    <input id="password" type="password" placeholder="Password"/>
+    <button id="loginBtn">Login</button>
+    <small style="color:var(--muted);text-align:center">Default: user / 1234</small>
+  </div>
+</div>
+
+<!-- APP PAGE -->
+<div id="appPage" class="hidden app">
+  <header>
+    <h1>💰 Personal Finance App</h1>
+    <nav>
+      <button data-page="dashboard" class="active">Dashboard</button>
+      <button data-page="tracker">Expense Tracker</button>
+      <button id="logoutBtn">Logout</button>
+    </nav>
+  </header>
+
+  <!-- DASHBOARD -->
+  <section id="dashboardPage" class="grid dashboard">
+    <div class="summary-card">
+      <h2>Balance</h2>
+      <div id="dashBalance">₹0.00</div>
+    </div>
+    <div class="summary-card">
+      <h2>Total Income</h2>
+      <div id="dashIncome" style="color:#6ee7b7">₹0.00</div>
+    </div>
+    <div class="summary-card">
+      <h2>Total Expense</h2>
+      <div id="dashExpense" style="color:#fd8787">₹0.00</div>
+    </div>
+    <div class="summary-card">
+      <h2>Quick Tip</h2>
+      <div style="color:var(--muted)">Track your daily spending to save more effectively 🚀</div>
+    </div>
+  </section>
+
+  <!-- EXPENSE TRACKER -->
+  <section id="trackerPage" class="hidden">
+    <!-- reuse the tracker from before, simplified -->
+    <div class="card">
+      <h2>Add Transaction</h2>
+      <div style="display:flex;gap:10px;margin:10px 0">
+        <input id="date" type="date"/>
+        <input id="amount" type="number" placeholder="Amount"/>
+        <input id="desc" type="text" placeholder="Description"/>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:10px">
+        <select id="category"><option>Food</option><option>Transport</option><option>Bills</option><option>Other</option></select>
+        <select id="type"><option value="expense">Expense</option><option value="income">Income</option></select>
+      </div>
+      <button id="addBtn">Add</button>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <h2>Transactions</h2>
+      <div id="txList" style="margin-top:10px;max-height:250px;overflow:auto"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // ===== LOGIN LOGIC =====
+  const loginPage=document.getElementById('loginPage');
+  const appPage=document.getElementById('appPage');
+  const loginBtn=document.getElementById('loginBtn');
+  const logoutBtn=document.getElementById('logoutBtn');
+
+  const defaultUser={user:"user",pass:"1234"};
+
+  loginBtn.onclick=()=>{
+    const u=document.getElementById('username').value;
+    const p=document.getElementById('password').value;
+    if(u===defaultUser.user && p===defaultUser.pass){
+      localStorage.setItem('loggedIn','yes');
+      loginPage.classList.add('hidden');
+      appPage.classList.remove('hidden');
+      render();
+    }else{
+      alert("Invalid credentials. Try user / 1234");
+    }
+  };
+  logoutBtn.onclick=()=>{
+    localStorage.removeItem('loggedIn');
+    appPage.classList.add('hidden');
+    loginPage.classList.remove('hidden');
+  };
+  if(localStorage.getItem('loggedIn')==='yes'){
+    loginPage.classList.add('hidden');
+    appPage.classList.remove('hidden');
+    render();
+  }
+
+  // ===== NAVIGATION =====
+  const navBtns=document.querySelectorAll('nav button[data-page]');
+  navBtns.forEach(btn=>{
+    btn.onclick=()=>{
+      navBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('dashboardPage').classList.add('hidden');
+      document.getElementById('trackerPage').classList.add('hidden');
+      document.getElementById(btn.dataset.page+"Page").classList.remove('hidden');
+    };
+  });
+
+  // ===== EXPENSE TRACKER =====
+  let transactions=JSON.parse(localStorage.getItem('transactions')||'[]');
+  const addBtn=document.getElementById('addBtn');
+  const txList=document.getElementById('txList');
+
+  addBtn.onclick=()=>{
+    const t={
+      id:Date.now(),
+      date:document.getElementById('date').value||new Date().toISOString().slice(0,10),
+      amount:parseFloat(document.getElementById('amount').value)||0,
+      desc:document.getElementById('desc').value||'',
+      category:document.getElementById('category').value,
+      type:document.getElementById('type').value
+    };
+    transactions.push(t);
+    localStorage.setItem('transactions',JSON.stringify(transactions));
+    render();
+  };
+
+  function render(){
+    // render tx list
+    txList.innerHTML='';
+    transactions.forEach(t=>{
+      const div=document.createElement('div');
+      div.style="padding:6px;border-bottom:1px solid rgba(255,255,255,.1)";
+      div.textContent=`${t.date} • ${t.desc} • ${t.category} • ${t.type} ₹${t.amount}`;
+      txList.appendChild(div);
+    });
+    // update dashboard
+    let inc=0,exp=0;
+    transactions.forEach(t=> t.type==='income'?inc+=t.amount:exp+=t.amount);
+    document.getElementById('dashIncome').textContent='₹'+inc.toFixed(2);
+    document.getElementById('dashExpense').textContent='₹'+exp.toFixed(2);
+    document.getElementById('dashBalance').textContent='₹'+(inc-exp).toFixed(2);
+  }
+</script>
+</body>
+</html>
